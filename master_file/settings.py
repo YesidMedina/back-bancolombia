@@ -67,6 +67,7 @@ CORS_ALLOWED_ORIGINS = [
     "http://127.0.0.1:9000",
 ]
 
+
 ROOT_URLCONF = 'master_file.urls'
 
 TEMPLATES = [
