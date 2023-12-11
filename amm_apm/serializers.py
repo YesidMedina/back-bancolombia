@@ -1,5 +1,5 @@
 from rest_framework.serializers import ModelSerializer
-from amm_apm.models import AmmApmModel, EmailAmmApmModel
+from amm_apm.models import AmmApmModel, EmailAmmApmModel, JobAmmApmModel
 
 
 class AmmApmSerializer(ModelSerializer):
@@ -12,3 +12,9 @@ class EmailAmmApmSerializer(ModelSerializer):
         model = EmailAmmApmModel
         fields = '__all__'
    
+
+class JobAmmApmSerializer(ModelSerializer):
+    class Meta:
+        model = JobAmmApmModel
+        fields = '__all__'
+      

@@ -2,21 +2,20 @@ from rest_framework import status
 from collections import Counter
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from .filters import AmmFilters
 from rest_framework.pagination import PageNumberPagination
 from django_filters.utils import translate_validation
-from amm_im.models import AmmImModel, EmailAmmImModel
-from amm_im.serializers import AmmImSerializer, EmailAmmImSerializer
+from amm_im.models import AmmImModel, EmailAmmImModel, BaseLineAmmImModel
+from amm_im.serializers import AmmImSerializer, EmailAmmImSerializer, BaseLineAmmImSerializer
 from rest_framework import generics
 from rest_framework import filters
-
 
 class AmmImRetiredApiView(generics.ListAPIView):
     queryset = AmmImModel.objects.filter(status= False).order_by('id').reverse()
     serializer_class = AmmImSerializer
+    pagination_class = PageNumberPagination
+    pagination_class.page_size = 20
     filter_backends = [filters.SearchFilter]
     search_fields = ['id', 'tool', '=service_manager', '=filial', 'ip_divice', 'description', 'order_number_oc']
-
 
 class AmmImApiView(generics.ListAPIView):
     queryset = AmmImModel.objects.filter(status= True).order_by('id').reverse()
@@ -26,29 +25,11 @@ class AmmImApiView(generics.ListAPIView):
     filter_backends = [filters.SearchFilter]
     search_fields = ['id', 'tool', '=service_manager', '=filial', 'ip_divice', 'description', 'order_number_oc']
     
-    # def get(self, request):
-    #     paginator = PageNumberPagination()
-    #     paginator.page_size = 30
-    #     filterset = AmmFilters(request.GET,queryset=AmmImModel.objects.filter(status=request.GET.get("status") == "true"
-    #         ).order_by("id"),
-    #     )
-    #     if request.search_fields('id'):
-    #         queryset = queryset.filter(status=request.query_params.get())
-    #     if not filterset.is_valid():
-    #         raise translate_validation(filterset.errors)
-
-    #     queryset = paginator.paginate_queryset(filterset.qs, request)
-    #     serializer = AmmImSerializer
-    #     serializer = AmmImSerializer(queryset, many=True)
-    #     return paginator.get_paginated_response(serializer.data)
-
     def post(self, request):
         serializer = AmmImSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
-        return Response(status=status.HTTP_200_OK, data=serializer.data)
-    
-    
+        return Response(status=status.HTTP_200_OK, data=serializer.data)    
 
 class AmmImApiViewDetail(APIView):
     def get_object(self, pk):
@@ -62,9 +43,9 @@ class AmmImApiViewDetail(APIView):
         serializer = AmmImSerializer(service)
         return Response(status=status.HTTP_200_OK, data=serializer.data)
 
-    def patch(self, request, id):
+    def put(self, request, id):
+        print(request)
         service = self.get_object(id)
-        print(request.data)
         if service == None:
             return Response(status=status.HTTP_200_OK, data={"error": "Not found data"})
         serializer = AmmImSerializer(service, data=request.data)
@@ -73,19 +54,20 @@ class AmmImApiViewDetail(APIView):
 
             return Response(status=status.HTTP_200_OK, data=serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+class DetailArryView(APIView):
 
-    # def put(self, request):
-    #     print(request.data)
-    #     service = object(id)
-    #     print(service)
-    #     if(service==None):
-    #         return Response(status=status.HTTP_200_OK, data={'error': 'Not found data'})
-    #     serializer = AmmImSerializer(service, data=request.data)
-    #     if serializer.is_valid():
-    #         serializer.save()
-    #         print(serializer.data)
-    #         return Response(status=status.HTTP_200_OK, data=serializer.data)
-    #     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def put(self, request, id):
+        print(request.data)
+        service = self.get_object(id)
+        if(service==None):
+             return Response(status=status.HTTP_200_OK, data={'error': 'Not found data'})
+        serializer = AmmImSerializer(service, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            print(serializer.data)
+            return Response(status=status.HTTP_200_OK, data=serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     # def put(self, request):
     #     service = self.get_object(id)
@@ -102,36 +84,29 @@ class AmmImApiViewDetail(APIView):
         service = list(AmmImModel.objects.filter(id=id).values())
         print(service)
         
-        
-
     def delete(self, request, id):
         service = self.get_object(id)
         service.delete()
         response = {"deleted": False}
         return Response(status=status.HTTP_200_OK, data=response)
         
-### search filter #####
-   
-    
-class FilterEmailAmmIm(generics.ListAPIView):
-    queryset = EmailAmmImModel.objects.all()
-    serializer_class = EmailAmmImSerializer
-    filter_backends = [filters.SearchFilter]
-    search_fields = ['group_email', 'name', 'order_oc', 'email_notification']
         
 # Models Email
+class EmailAmmImGetApiView(generics.ListAPIView):
+    queryset = EmailAmmImModel.objects.all().order_by('id').reverse()
+    serializer_class = EmailAmmImSerializer
+    pagination_class = PageNumberPagination
+    pagination_class.page_size = 20
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['group_email', 'name', 'order_oc', 'email_notification']
 
 class EmailAmmImApiView(APIView):
-    def get(self, request):
-        serializer = EmailAmmImSerializer(EmailAmmImModel.objects.all(), many=True)
-        return Response(status=status.HTTP_200_OK, data=serializer.data)
 
     def post(self, request):
         serializer = EmailAmmImSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return Response(status=status.HTTP_200_OK, data=serializer.data)
-
 
 class EmailAmmImApiViewDetail(APIView):
     def get_object(self, pk):
@@ -194,6 +169,20 @@ class GraphicsAmmImFull(APIView):
             total_status = Counter(total)
         return Response(status=status.HTTP_200_OK, data=[total_status])
     
+class GraphicsFilialAmmIm(APIView):
+    def get(self, request):
+        serializer = AmmImSerializer(
+            AmmImModel.objects.filter(status=request.GET.get("status") != "true"),
+            many=True,
+        )
+        data = serializer.data
+        total = []
+        for x in data:
+            total.append(x["filial"])
+            total_filial = Counter(total) 
+            print(total_filial)  
+        return Response(status=status.HTTP_200_OK, data=[total_filial])    
+    
     
 ####import Export excel####
     
@@ -217,3 +206,13 @@ class GraphicsAmmImFull(APIView):
 #         df.to_excel(full_name)
 #         return Response(status=status.HTTP_200_OK)
                 
+##### Baseline #####
+
+class BaseLineAmmImApiView(generics.ListAPIView):
+    queryset = BaseLineAmmImModel.objects.all().order_by('name_baseline')
+    serializer_class = BaseLineAmmImSerializer
+    pagination_class = None
+    
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name_baseline', 'type_configuration', '=item_configuration']
+

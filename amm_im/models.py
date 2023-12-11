@@ -30,7 +30,7 @@ class AmmImModel(models.Model):
     details = models.CharField(max_length=1000)
     spectrum_soi = models.CharField(max_length=50)
     status = models.BooleanField()
-    maintenance = models.BooleanField( True == 'Mantenimiento', False == 'Activo')
+    maintenance = models.BooleanField()
     order_number_oc = models.CharField(max_length=500)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -54,8 +54,26 @@ class EmailAmmImModel(models.Model):
         ordering = ['-created_at']
         
         
-class Excel_file_upload(models.Model):
-    excel_file_upload = models.FileField(upload_to='excel') 
+# class Excel_file_upload(models.Model):
+#     excel_file_upload = models.FileField(upload_to='excel') 
+
+
+class BaseLineAmmImModel(models.Model):
+    name_baseline = models.CharField(max_length=100)
+    type_configuration = models.CharField(max_length=100)
+    item_configuration = models.CharField(max_length=500)
+    major = models.CharField(max_length=50)  
+    critical = models.CharField(max_length=50) 
+    group_support = models.CharField(max_length=100)  
+    impact = models.CharField(max_length=1000)  
+    details = models.CharField(max_length=500)   
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now_add=True)
+
+       
+    class Meta:
+        db_table = 'baseline_amm_im'
+        ordering = ['-created_at']    
     
       
         

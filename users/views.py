@@ -1,4 +1,3 @@
-
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -27,16 +26,15 @@ class LoginView(APIView):
         
         user = User.objects.filter(username=username).first()
         
-        if user is None:
-            raise AuthenticationFailed('User not found', status=status.HTTP_401_UNAUTHORIZED)
-        
-        if not user.check_password(password):
-            raise AuthenticationFailed('Incorrect password', status=status.HTTP_200_OK)
+        if user is None or not user.check_password(password):
+            raise AuthenticationFailed('Unauthenticated')
+    
         
         payload = {
             'id':user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=10),
-            'iat': datetime.datetime.utcnow()
+            'iat': datetime.datetime.utcnow(),
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=1),
+            
         }
         
         token = jwt.encode(payload, 'secret', algorithm='HS256')       
@@ -55,11 +53,17 @@ class UserView(APIView):
         
         if not token:
              raise AuthenticationFailed('Unauthenticated')
-         
+                
         try:
           payload = jwt.decode(token, 'secret', algorithms=['HS256'])
+          
         except jwt.ExpiredSignatureError:
-          raise AuthenticationFailed('Unauthenticated') 
+            raise AuthenticationFailed('Unauthenticated') 
+        print(payload['exp'])
+        print(datetime.datetime.utcnow().toordinal(), 'date time')
+      
+        if payload['exp'] <= datetime.datetime.utcnow():
+            raise AuthenticationFailed('Token expired') 
       
         user = User.objects.filter(id=payload['id']).first()
         serializer = UserSerializer(user)
